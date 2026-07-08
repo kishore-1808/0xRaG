@@ -4,9 +4,20 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 from utils import load_environment, get_llm
 from retrieve import get_retriever
+from auth import login_prompt
 
 def main():
     load_environment()
+    
+    token = login_prompt()
+    if token is None:
+        print("Authentication failed. Exiting.")
+        return
+    
+    if token == "guest":
+        user_type = "guest"
+    else:
+        user_type = "authenticated"
     
     retriever = get_retriever()
     if not retriever:
@@ -15,7 +26,6 @@ def main():
         
     llm = get_llm()
     
-    # Define the system prompt for RAG
     system_prompt = (
         "You are an assistant for question-answering tasks. "
         "Use the following pieces of retrieved context to answer the question. "
@@ -33,7 +43,7 @@ def main():
     question_answer_chain = create_stuff_documents_chain(llm, prompt)
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
     
-    print("\n--- RAG Chat Started ---")
+    print(f"\n--- RAG Chat Started (User: {user_type}) ---")
     print("Type 'quit' or 'exit' to stop.")
     
     while True:
